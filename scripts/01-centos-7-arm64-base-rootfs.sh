@@ -2,24 +2,23 @@
 
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
-[ -z $ROOTFS_DL_FILE ] && ROOTFS_DL_FILE="$DL_DIR/$DISTRO_NAME-base.raw.xz"
 [ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$DISTRO_NAME-base.tar.gz"
 [ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://mirror.infonline.de/centos-altarch/7.8.2003/isos/aarch64/images/CentOS-Userland-7-aarch64-generic-Minimal-2003-sda.raw.xz"
 
-[ ! -f $ROOTFS_DL_FILE ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_FILE
-[ ! -f $ROOTFS_DL_FILE ] && echo "$ROOTFS_DL_FILE : file not found" && exit 0
+[ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
+[ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found" && exit 0
 
 create_base_rootfs_disk() {
 if [ -f $ROOTFS_BASE_TAR ]; then
    echo "Based on: $ROOTFS_BASE_TAR"
    $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_BASE_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
 else
-   echo "Based on: $ROOTFS_DL_FILE"
+   echo "Based on: $ROOTFS_DL_TAR"
    TMP_DIR=$BUILD_DIR/tar.xz.tmp
    rm -rf $TMP_DIR
    mkdir -p $TMP_DIR
 
-   [ ! -f $TMP_DIR/disk.raw ] && unxz -k -c $ROOTFS_DL_FILE > $TMP_DIR/disk.raw
+   [ ! -f $TMP_DIR/disk.raw ] && unxz -k -c $ROOTFS_DL_TAR > $TMP_DIR/disk.raw
    [ ! -f $TMP_DIR/disk.raw ] && echo "$TMP_DIR/disk.raw : file not found" && exit 0
 
    PART="$(sudo kpartx -avs $TMP_DIR/disk.raw | awk '{print $3}')"

@@ -37,4 +37,5 @@ sources
 cache
 build*
 dl*
-imag*
+centos*
+ubuntu*

@@ -3,7 +3,7 @@
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
 [ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$DISTRO_NAME-base.tar.gz"
-[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.1-base-arm64.tar.gz"
+[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.1-base-armhf.tar.gz"
 
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
 [ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found"
