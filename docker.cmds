@@ -1,0 +1,13 @@
+
+
+https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-18-04
+docker search debian-stretch-slim
+docker pull ehdevops/debian-stretch-slim
+docker images
+docker run --privileged --rm  -it -v  $(pwd):/home/$USER/ -e USER=$USER  -e USERID=$UID ehdevops/debian-stretch-slim
+
+
+
+
+sudo docker ps -l
+sudo docker commit bebfdd4805dc ehdevops/debian-stretch-slim

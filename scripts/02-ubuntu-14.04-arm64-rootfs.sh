@@ -3,7 +3,7 @@
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
 [ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$DISTRO_NAME-base.tar.gz"
-[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.1-base-armhf.tar.gz"
+[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/14.04.6/release/ubuntu-base-14.04.6-base-arm64.tar.gz"
 
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
 [ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found"
@@ -38,7 +38,7 @@ locale-gen en_US.UTF-8
 
 apt-get -y upgrade
 apt-get -y install --no-install-recommends util-linux nano openssh-server
-apt-get -y install --no-install-recommends systemd udev systemd-sysv
+apt-get -y install --no-install-recommends udev
 apt-get -y install --no-install-recommends net-tools iproute2 iputils-ping ethtool isc-dhcp-client
 
 ######################################Runtime libs######################################
@@ -46,9 +46,11 @@ apt-get -q -y install --no-install-recommends libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev
 
 ######################################Dev libs##########################################
-apt-get -y install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev libglib2.0-dev libsystemd-dev gcc g++
+apt-get -y install --no-install-recommends libncurses-dev libglib2.0-dev gcc g++
 apt-get -y install --no-install-recommends symlinks
-symlinks -c /usr/lib/aarch64-linux-gnu
+symlinks -c /usr/lib/gcc/aarch64-linux-gnu
+apt-get -y clean
+rm -rf /var/cache/apt/*
 EOF
 
    export ROOTFS_DISK_PATH=$ROOTFS_BASE_DISK

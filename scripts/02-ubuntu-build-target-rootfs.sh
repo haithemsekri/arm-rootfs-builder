@@ -2,9 +2,9 @@
 
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
-[ ! -f $XEN_IMAGE_FILE ] &&  echo "$XEN_IMAGE_FILE not found" && exit 0
-[ ! -f $ROOTFS_BASE_DISK ] &&  echo "$ROOTFS_BASE_DISK not found" && exit 0
-[ ! -f $KERNEL_DOM0_IMAGE_FILE ] &&  echo "$KERNEL_DOM0_IMAGE_FILE not found" && exit 0
+[ ! -f $XEN_IMAGE_FILE ] &&  echo "$XEN_IMAGE_FILE not found" && exit 1
+[ ! -f $ROOTFS_BASE_DISK ] &&  echo "$ROOTFS_BASE_DISK not found" && exit 1
+[ ! -f $KERNEL_DOM0_IMAGE_FILE ] &&  echo "$KERNEL_DOM0_IMAGE_FILE not found" && exit 1
 
 if [ "$1" == "--rebuild" ]; then
    echo "delete $ROOTFS_TARGET_DISK"

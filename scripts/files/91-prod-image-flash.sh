@@ -1,6 +1,6 @@
 #!/bin/bash
 
-[ ! -b $1 ] &&  echo "Invalid arg1 for destination device file" && exit 0
+[ ! -b $1 ] &&  echo "Invalid arg1 for destination device file" && exit 1
 
 DEVICE=$1
 

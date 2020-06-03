@@ -2,7 +2,7 @@
 
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
-[ ! -f $ROOTFS_TARGET_DISK ] && echo "$ROOTFS_TARGET_DISK : file not found"  && exit 0
+[ ! -f $ROOTFS_TARGET_DISK ] && echo "$ROOTFS_TARGET_DISK : file not found"  && exit 1
 
 if [ "$1" == "--rebuild" ]; then
    echo -n ""
@@ -19,7 +19,7 @@ if [ ! -d $SYSROOT_TARGET_TAR ]; then
    sudo umount $TMP_DIR 2>/dev/null
    sudo mount -o loop $ROOTFS_TARGET_DISK $TMP_DIR
    MTAB_ENTRY="$(mount | egrep "$ROOTFS_TARGET_DISK" | egrep "$TMP_DIR")"
-   [ -z "$MTAB_ENTRY" ] &&  echo "Failed to mount disk" && rm -rf $TMP_DIR  && exit 0
+   [ -z "$MTAB_ENTRY" ] &&  echo "Failed to mount disk" && rm -rf $TMP_DIR  && exit 1
 
    SYSROOT_PATH="$BUILD_DIR/sysroot.tmp"
    mkdir -p $SYSROOT_PATH

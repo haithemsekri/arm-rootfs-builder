@@ -6,7 +6,7 @@ source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 [ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://ftp.rz.uni-frankfurt.de/pub/mirrors/centos-altarch/7.8.2003/isos/armhfp/CentOS-Userland-7-armv7hl-RootFS-Minimal-2003-sda.raw.xz"
 
 [ ! -f $ROOTFS_DL_FILE ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_FILE
-[ ! -f $ROOTFS_DL_FILE ] && echo "$ROOTFS_DL_FILE : file not found" && exit 0
+[ ! -f $ROOTFS_DL_FILE ] && echo "$ROOTFS_DL_FILE : file not found" && exit 1
 
 create_base_rootfs_disk() {
 if [ -f $ROOTFS_BASE_TAR ]; then
@@ -19,14 +19,14 @@ else
    mkdir -p $TMP_DIR
 
    [ ! -f $TMP_DIR/disk.raw ] && unxz -k -c $ROOTFS_DL_FILE > $TMP_DIR/disk.raw
-   [ ! -f $TMP_DIR/disk.raw ] && echo "$TMP_DIR/disk.raw : file not found" && exit 0
+   [ ! -f $TMP_DIR/disk.raw ] && echo "$TMP_DIR/disk.raw : file not found" && exit 1
 
    PART="$(sudo kpartx -avs $TMP_DIR/disk.raw | awk '{print $3}')"
    LOOP_DEV="$(echo $PART | awk '{print $1}')"
-   [ -z $LOOP_DEV ] && sudo kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw && "LOOP_DEV: device not found" && exit 0
+   [ -z $LOOP_DEV ] && sudo kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw && "LOOP_DEV: device not found" && exit 1
    LOOP_DEV="/dev/mapper/$LOOP_DEV"
    echo "LOOP_DEV: $LOOP_DEV"
-   [ ! -b $LOOP_DEV ] && sudo kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw  && "$LOOP_DEV: device not found" && exit 0
+   [ ! -b $LOOP_DEV ] && sudo kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw  && "$LOOP_DEV: device not found" && exit 1
 
    sudo dd if=$LOOP_DEV of=$ROOTFS_BASE_DISK status=progress
    sync
@@ -34,7 +34,7 @@ else
    rm -rf $TMP_DIR
 
    echo "ROOTFS_BASE_DISK: $ROOTFS_BASE_DISK"
-   [ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 0
+   [ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 1
 
    CHROOT_SCRIPT="$BUILD_DIR/chroot-script.sh"
    rm -rf  $CHROOT_SCRIPT
@@ -109,7 +109,7 @@ fi
 
 echo "Building $ROOTFS_BASE_DISK"
 [ ! -f $ROOTFS_BASE_DISK ] && create_base_rootfs_disk
-[ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 0
+[ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 1
 
 echo "Building $ROOTFS_BASE_TAR"
 [ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
