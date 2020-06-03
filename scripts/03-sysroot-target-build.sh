@@ -16,8 +16,8 @@ fi
 if [ ! -d $SYSROOT_TARGET_TAR ]; then
    TMP_DIR="$BUILD_DIR/cross-compiler-setup.tmp"
    [ ! -d $TMP_DIR ] && mkdir -p $TMP_DIR
-   sudo umount $TMP_DIR 2>/dev/null
-   sudo mount -o loop $ROOTFS_TARGET_DISK $TMP_DIR
+   umount $TMP_DIR 2>/dev/null
+   mount -o loop $ROOTFS_TARGET_DISK $TMP_DIR
    MTAB_ENTRY="$(mount | egrep "$ROOTFS_TARGET_DISK" | egrep "$TMP_DIR")"
    [ -z "$MTAB_ENTRY" ] &&  echo "Failed to mount disk" && rm -rf $TMP_DIR  && exit 1
 
@@ -34,20 +34,20 @@ if [ ! -d $SYSROOT_TARGET_TAR ]; then
    [ -d $TMP_DIR/usr/local/include  ] && echo "Installing $TMP_DIR/usr/local/include ---> $SYSROOT_PATH/usr/local/"  && cp -r $TMP_DIR/usr/local/include $SYSROOT_PATH/usr/local/
    sync
 
-   sudo cp $SCRIPTS_DIR/03-sysroot-build-env.sh $TMP_DIR/chroot_script.sh
-   sudo chmod 755 $TMP_DIR/chroot_script.sh
-   sudo chroot $TMP_DIR bash /chroot_script.sh
-   sudo rm -rf $TMP_DIR/chroot_script.sh
+   cp $SCRIPTS_DIR/03-sysroot-build-env.sh $TMP_DIR/chroot_script.sh
+   chmod 755 $TMP_DIR/chroot_script.sh
+   chroot $TMP_DIR /bin/bash /chroot_script.sh
+   rm -rf $TMP_DIR/chroot_script.sh
    cp $TMP_DIR/sysroot_basic_env.sh $SYSROOT_PATH
 
-   sudo umount $TMP_DIR
-   sudo umount -f -l $TMP_DIR
+   umount $TMP_DIR  2>/dev/null
+   umount -f -l $TMP_DIR  2>/dev/null
    rm -rf $TMP_DIR
 
    cd $SYSROOT_PATH
    tar -czf $SYSROOT_TARGET_TAR .
    cd -
-   sudo rm -rf $SYSROOT_PATH
+   rm -rf $SYSROOT_PATH
 fi
 
 

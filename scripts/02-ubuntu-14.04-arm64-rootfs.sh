@@ -3,7 +3,7 @@
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
 [ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$DISTRO_NAME-base.tar.gz"
-[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/14.04.6/release/ubuntu-base-14.04.6-base-arm64.tar.gz"
+[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/14.04/release/ubuntu-base-14.04.6-base-arm64.tar.gz"
 
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
 [ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found"
@@ -51,13 +51,14 @@ apt-get -y install --no-install-recommends symlinks
 symlinks -c /usr/lib/gcc/aarch64-linux-gnu
 apt-get -y clean
 rm -rf /var/cache/apt/*
+
 EOF
 
    export ROOTFS_DISK_PATH=$ROOTFS_BASE_DISK
    source $SCRIPTS_DIR/12-chroot-run.sh
    chroot_run_script $CHROOT_SCRIPT
    rm -rf $CHROOT_SCRIPT
-   sudo rsync -avlz  $SCRIPTS_DIR/overlays/  ${RTFS_MNT_DIR}/
+   rsync -avlz  $SCRIPTS_DIR/overlays/  ${RTFS_MNT_DIR}/
    cleanup_on_exit
 fi
 }
@@ -83,5 +84,5 @@ echo "Building $ROOTFS_BASE_DISK"
 echo "Building $ROOTFS_BASE_TAR"
 [ ! -f $ROOTFS_BASE_TAR ] && backup_rootfs_disk
 
-sudo chmod 666 $ROOTFS_BASE_DISK
-sudo chmod 666 $ROOTFS_BASE_TAR
+chmod 666 $ROOTFS_BASE_DISK
+chmod 666 $ROOTFS_BASE_TAR

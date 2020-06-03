@@ -3,7 +3,7 @@
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
 [ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$DISTRO_NAME-base.tar.gz"
-[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://mirror.infonline.de/centos-altarch/7.8.2003/isos/aarch64/images/CentOS-Userland-7-aarch64-generic-Minimal-2003-sda.raw.xz"
+[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://ftp.rz.uni-frankfurt.de/pub/mirrors/centos-altarch/7.8.2003/isos/aarch64/images/CentOS-Userland-7-aarch64-RaspberryPI-Minimal-4-2003-sda.raw.xz"
 
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
 [ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found" && exit 1
@@ -21,16 +21,17 @@ else
    [ ! -f $TMP_DIR/disk.raw ] && unxz -k -c $ROOTFS_DL_TAR > $TMP_DIR/disk.raw
    [ ! -f $TMP_DIR/disk.raw ] && echo "$TMP_DIR/disk.raw : file not found" && exit 1
 
-   PART="$(sudo kpartx -avs $TMP_DIR/disk.raw | awk '{print $3}')"
-   LOOP_DEV="$(echo $PART | awk '{print $4}')"
-   [ -z $LOOP_DEV ] && sudo kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw && "LOOP_DEV: device not found" && exit 1
+   PART="$(kpartx -avs $TMP_DIR/disk.raw | awk '{print $3}')"
+   echo "PART: $PART"
+   LOOP_DEV="$(echo $PART | awk '{print $3}')"
+   [ -z $LOOP_DEV ] && kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw && "LOOP_DEV: device not found" && exit 1
    LOOP_DEV="/dev/mapper/$LOOP_DEV"
    echo "LOOP_DEV: $LOOP_DEV"
-   [ ! -b $LOOP_DEV ] && sudo kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw  && "$LOOP_DEV: device not found" && exit 1
+   [ ! -b $LOOP_DEV ] && kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw  && "$LOOP_DEV: device not found" && exit 1
 
-   sudo dd if=$LOOP_DEV of=$ROOTFS_BASE_DISK status=progress
+   dd if=$LOOP_DEV of=$ROOTFS_BASE_DISK status=progress
    sync
-   sudo kpartx -dvs $TMP_DIR/disk.raw
+   kpartx -dvs $TMP_DIR/disk.raw
    rm -rf $TMP_DIR
 
    echo "ROOTFS_BASE_DISK: $ROOTFS_BASE_DISK"
@@ -44,11 +45,11 @@ cat <<EOF > $CHROOT_SCRIPT
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
 
-yum -y update
+yum -y update --exclude=kernel* redhat-release* centos-release*
 
 #rpm -qa --queryformat 'yum -y remove %-25{name} \n' > /cleanup.sh
 yum -y remove openssh-server grub2-common NetworkManager-wifi uboot-images-armv8 postfix chrony basesystem parted dracut-config-extradrivers sg3_utils man-db \
-   sudo shim-aa64 efibootmgr grubby grub2-efi-aa64-modules rootfiles iwl6050-firmware iwl6000g2a-firmware iwl5150-firmware iwl4965-firmware iwl3160-firmware \
+   shim-aa64 efibootmgr grubby grub2-efi-aa64-modules rootfiles iwl6050-firmware iwl6000g2a-firmware iwl5150-firmware iwl4965-firmware iwl3160-firmware \
    iwl2000-firmware iwl105-firmware iwl100-firmware systemd-sysv libnl3 file libgomp libunistring e2fsprogs-libs ethtool python-decorator jansson python-slip \
    python-configobj python-linux-procfs python-schedutils gettext-libs less libteam ipset python-gobject-base fipscheck mariadb-libs logrotate acl mozjs17 \
    libss freetype dtc libestr libndp libseccomp lsscsi pciutils-libs sg3_utils-libs newt polkit-pkla-compat iputils grub2-tools-minimal cronie-anacron \
@@ -74,19 +75,16 @@ EOF
    source $SCRIPTS_DIR/12-chroot-run.sh
    chroot_run_script $CHROOT_SCRIPT
    sync
-
    rm -rf $CHROOT_SCRIPT
    chroot_umount_pseudo_fs
-
    cd $RTFS_MNT_DIR
-   sudo tar -czf $ROOTFS_BASE_TAR .
+   tar -czf $ROOTFS_BASE_TAR .
    cd -
-
    cleanup_on_exit
-   sudo rm -rf $ROOTFS_BASE_DISK
+   rm -rf $ROOTFS_BASE_DISK
    $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_BASE_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
 
-   #sudo rsync -avlz  $SCRIPTS_DIR/overlays/  ${RTFS_MNT_DIR}/
+   #rsync -avlz  $SCRIPTS_DIR/overlays/  ${RTFS_MNT_DIR}/
 fi
 }
 
