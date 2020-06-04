@@ -3,7 +3,7 @@
 source $(dirname $(realpath $0))/00-distro-common-env.sh
 
 [ -z $DISTRO_NAME ] && DISTRO_NAME="$DISTRO-$TARGET_ARCH"
-[ -z $DISTRO_SIZE_MB ] && DISTRO_SIZE_MB=2048
+[ -z $DISTRO_SIZE_MB ] && DISTRO_SIZE_MB=1024
 [ -z $EXT_FS_TYPE ]    && EXT_FS_TYPE="ext3"
 [ -z $MKFS_CMD ]       && MKFS_CMD="mkfs.$EXT_FS_TYPE"
 

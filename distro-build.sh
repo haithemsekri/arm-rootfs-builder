@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #Platform :##########################################
-[ -z $TARGET_ARCH ] && export TARGET_ARCH="arm64"
+[ -z $TARGET_ARCH ] && export TARGET_ARCH="arm32"
 [ -z $TARGET_NAME ] && TARGET_NAME="opipc2"
 [ -z $DISTRO ] && export DISTRO="centos-7"
 [ -z $TARGET_BUILD_NAME ] && TARGET_BUILD_NAME="$TARGET_ARCH-$TARGET_NAME"
@@ -20,20 +20,21 @@ echo "$(realpath $(dirname $(realpath $0)))"
 
 
 if [[ "$DISTRO-$TARGET_ARCH" == "centos-7-arm32" ]]; then
-$WORKSPACE/scripts/01-centos-7-arm32-rootfs.sh
+   $WORKSPACE/scripts/01-centos-7-arm32-rootfs.sh
 elif [[ "$DISTRO-$TARGET_ARCH" == "centos-7-arm64" ]]; then
-$WORKSPACE/scripts/01-centos-7-arm64-rootfs.sh
-elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-18.04-arm64" ]]; then
-$WORKSPACE/scripts/02-ubuntu-18.04-arm64-rootfs.sh
+   $WORKSPACE/scripts/01-centos-7-arm64-rootfs.sh
 elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-18.04-arm32" ]]; then
-$WORKSPACE/scripts/02-ubuntu-18.04-arm32-rootfs.sh
-elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-14.04-arm64" ]]; then
-$WORKSPACE/scripts/02-ubuntu-14.04-arm64-rootfs.sh
+   $WORKSPACE/scripts/02-ubuntu-18.04-arm32-rootfs.sh
+elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-18.04-arm64" ]]; then
+   $WORKSPACE/scripts/02-ubuntu-18.04-arm64-rootfs.sh
 elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-14.04-arm32" ]]; then
-$WORKSPACE/scripts/02-ubuntu-14.04-arm32-rootfs.sh
+   $WORKSPACE/scripts/02-ubuntu-14.04-arm32-rootfs.sh
+elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-14.04-arm64" ]]; then
+   $WORKSPACE/scripts/02-ubuntu-14.04-arm64-rootfs.sh
 else
-echo "Invalid DISTRO: $DISTRO-$TARGET_ARCH"
-exit 0
+   echo "Invalid DISTRO: $DISTRO-$TARGET_ARCH"
+   exit 0
 fi
 
-$WORKSPACE/scripts/03-sysroot-target-build.sh
+#$WORKSPACE/scripts/03-sysroot-target-build.sh
+
