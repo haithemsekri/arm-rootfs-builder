@@ -1,0 +1,18 @@
+--- xen/include/public/arch-arm.origin.h	2020-05-31 20:28:37.889503863 +0200
++++ xen/include/public/arch-arm.h	2020-05-31 20:28:45.521285839 +0200
+@@ -361,6 +361,15 @@
+ #define PSR_MODE_UND 0x1b
+ #define PSR_MODE_SYS 0x1f
+ 
++#undef PSR_MODE_BIT
++#undef PSR_MODE_EL3h
++#undef PSR_MODE_EL3t
++#undef PSR_MODE_EL2h
++#undef PSR_MODE_EL2t
++#undef PSR_MODE_EL1h
++#undef PSR_MODE_EL1t
++#undef PSR_MODE_EL0t
++
+ /* 64 bit modes */
+ #define PSR_MODE_BIT  0x10 /* Set iff AArch32 */
+ #define PSR_MODE_EL3h 0x0d
