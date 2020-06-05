@@ -37,5 +37,4 @@ else
    exit 0
 fi
 
-#$WORKSPACE/scripts/03-sysroot-target-build.sh
 

@@ -2,7 +2,7 @@
 
 source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 
-[ ! -f $ROOTFS_TARGET_DISK ] && echo "$ROOTFS_TARGET_DISK : file not found"  && exit 1
+[ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found"  && exit 1
 
 if [ "$1" == "--rebuild" ]; then
    echo -n ""
@@ -17,8 +17,8 @@ if [ ! -d $SYSROOT_TARGET_TAR ]; then
    TMP_DIR="$BUILD_DIR/cross-compiler-setup.tmp"
    [ ! -d $TMP_DIR ] && mkdir -p $TMP_DIR
    umount $TMP_DIR 2>/dev/null
-   mount -o loop $ROOTFS_TARGET_DISK $TMP_DIR
-   MTAB_ENTRY="$(mount | egrep "$ROOTFS_TARGET_DISK" | egrep "$TMP_DIR")"
+   mount -o loop $ROOTFS_BASE_DISK $TMP_DIR
+   MTAB_ENTRY="$(mount | egrep "$ROOTFS_BASE_DISK" | egrep "$TMP_DIR")"
    [ -z "$MTAB_ENTRY" ] &&  echo "Failed to mount disk" && rm -rf $TMP_DIR  && exit 1
 
    SYSROOT_PATH="$BUILD_DIR/sysroot.tmp"
