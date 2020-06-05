@@ -8,7 +8,7 @@ source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
 [ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found" && exit 1
 
-create_base_rootfs_disk() {
+build_base_rootfs_disk() {
 if [ -f $ROOTFS_BASE_TAR ]; then
    echo "Based on: $ROOTFS_BASE_TAR"
    $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_BASE_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
@@ -24,10 +24,10 @@ else
    PART="$(kpartx -avs $TMP_DIR/disk.raw | awk '{print $3}')"
    echo "PART: $PART"
    LOOP_DEV="$(echo $PART | awk '{print $3}')"
-   [ -z $LOOP_DEV ] && kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw && "LOOP_DEV: device not found" && exit 1
+   [ -z $LOOP_DEV ] && kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR && "LOOP_DEV: device not found" && exit 1
    LOOP_DEV="/dev/mapper/$LOOP_DEV"
    echo "LOOP_DEV: $LOOP_DEV"
-   [ ! -b $LOOP_DEV ] && kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR/disk.raw  && "$LOOP_DEV: device not found" && exit 1
+   [ ! -b $LOOP_DEV ] && kpartx -dvs $TMP_DIR/disk.raw && rm -rf $TMP_DIR  && "$LOOP_DEV: device not found" && exit 1
 
    dd if=$LOOP_DEV of=$ROOTFS_BASE_DISK status=progress
    sync
@@ -47,7 +47,7 @@ echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
 
 passwd
 
-yum -y update --exclude=kernel* --exclude=redhat-release* --exclude=centos-release*
+yum -y update --exclude=*raspberrypi*  --exclude=*kernel* --exclude=redhat-release* --exclude=centos-release*
 
 #rpm -qa --queryformat 'yum -y remove %-25{name} \n' > /cleanup.sh
 yum -y remove openssh-server grub2-common NetworkManager-wifi uboot-images-armv8 postfix chrony basesystem parted dracut-config-extradrivers sg3_utils man-db \
@@ -61,8 +61,7 @@ yum -y remove openssh-server grub2-common NetworkManager-wifi uboot-images-armv8
    iwl6000g2b-firmware iwl6000-firmware iwl5000-firmware iwl3945-firmware iwl2030-firmware iwl135-firmware iwl1000-firmware ivtv-firmware which libcroco libnl3-cli groff-base \
    libedit efivar-libs lzo tcp_wrappers-libs libselinux-python python-perf mokutil gettext ipset-libs gobject-introspection fipscheck-lib alsa-lib centos-logos libselinux-utils \
    vim-minimal snappy libpng dmidecode libdaemon libfastjson libpipeline numactl-libs slang polkit wpa_supplicant cronie os-prober uboot-tools NetworkManager openssh selinux-policy \
-   grub2-tools-extra ebtables alsa-fi
-   rmware hwdata dbus-glib python-slip-dbus teamd plymouth-scripts python-pyudev kernel-tools-libs kernel-core kbd-misc firewalld-filesystem kbd \
+   grub2-tools-extra ebtables alsa-firmware hwdata dbus-glib python-slip-dbus teamd plymouth-scripts python-pyudev kernel-tools-libs kernel-core kbd-misc firewalld-filesystem kbd \
    kernel-tools NetworkManager-team grub2 selinux-policy-targeted libnfnetlink sysvinit-tools raspberrypi2-kernel raspberrypi2-kernel-devel raspberrypi2-kernel4 \
    raspberrypi2-firmware raspberrypi-vc-libs-devel  raspberrypi2-kernel4
 
@@ -94,6 +93,35 @@ EOF
 fi
 }
 
+build_target_rootfs_disk() {
+   echo "Based on: $ROOTFS_BASE_DISK"
+   cp $ROOTFS_BASE_DISK $ROOTFS_TARGET_DISK
+   CHROOT_SCRIPT="$BUILD_DIR/chroot-script.sh"
+   rm -rf  $CHROOT_SCRIPT
+
+cat <<EOF > $CHROOT_SCRIPT
+#!/bin/bash
+echo "Cleaning everything"
+yum -y remove gcc gcc-c++ systemd-devel
+yum clean all
+mv /usr/share/locale/en_US /
+mv /usr/share/locale/uk /
+rm /usr/lib/locale/*
+rm -rf /usr/share/doc/*
+rm -rf /usr/share/locale/*
+rm -rf /usr/lib/*.a
+rm -rf /usr/lib/gcc/*/*/*.a
+mv /en_US /uk /usr/share/locale/
+localedef --list-archive | grep -v -i ^en | xargs localedef --delete-from-archive
+EOF
+   export ROOTFS_DISK_PATH=$ROOTFS_TARGET_DISK
+   source $SCRIPTS_DIR/12-chroot-run.sh
+   chroot_run_script $CHROOT_SCRIPT
+   sync
+   rm -rf $CHROOT_SCRIPT
+   cleanup_on_exit
+}
+
 backup_base_rootfs_disk() {
    echo "Based on: $ROOTFS_BASE_DISK"
    $SCRIPTS_DIR/11-disk-image-to-tar.sh $ROOTFS_BASE_DISK $ROOTFS_BASE_TAR
@@ -108,11 +136,25 @@ if [ "$1" == "--clean-rebuild" ]; then
    rm -rf "$ROOTFS_BASE_DISK"
    echo "delete $ROOTFS_BASE_TAR"
    rm -rf "$ROOTFS_BASE_TAR"
+   echo "delete $ROOTFS_TARGET_DISK"
+   rm -rf "$ROOTFS_TARGET_DISK"
 fi
 
 echo "Building $ROOTFS_BASE_DISK"
-[ ! -f $ROOTFS_BASE_DISK ] && create_base_rootfs_disk
+[ ! -f $ROOTFS_BASE_DISK ] && build_base_rootfs_disk
 [ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 1
 
 echo "Building $ROOTFS_BASE_TAR"
 [ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
+
+if [ "$1" == "--build-target" ]; then
+   echo "delete $ROOTFS_TARGET_DISK"
+   rm -rf "$ROOTFS_TARGET_DISK"
+   echo "Build: $ROOTFS_TARGET_DISK"
+   build_target_rootfs_disk
+   echo "target disk: $ROOTFS_TARGET_DISK"
+   chmod 666 $ROOTFS_TARGET_DISK
+fi
+
+chmod 666 $ROOTFS_BASE_DISK
+chmod 666 $ROOTFS_BASE_TAR

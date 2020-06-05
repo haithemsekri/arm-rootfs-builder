@@ -6,9 +6,9 @@ source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 [ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$(basename $ROOTFS_DL_URL)"
 
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
-[ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found"
+[ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found" && exit 1
 
-create_rootfs_disk() {
+build_base_rootfs_disk() {
 if [ -f $ROOTFS_BASE_TAR ]; then
    echo "Based on: $ROOTFS_BASE_TAR"
    $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_BASE_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
@@ -36,18 +36,19 @@ apt-get -y install --no-install-recommends locales
 locale-gen en_US.UTF-8
 
 apt-get -y upgrade
-apt-get -y install --no-install-recommends util-linux nano openssh-server
-apt-get -y install --no-install-recommends udev
-apt-get -y install --no-install-recommends net-tools iproute2 iputils-ping ethtool isc-dhcp-client
+apt-get -y install --no-install-recommends util-linux nano openssh-server udev \
+	net-tools iproute2 iputils-ping ethtool isc-dhcp-client
 
 ######################################Runtime libs######################################
-apt-get -q -y install --no-install-recommends libyajl-dev \
+apt-get -y install --no-install-recommends libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev
 
 ######################################Dev libs##########################################
-apt-get -y install --no-install-recommends libncurses-dev libglib2.0-dev gcc g++
-apt-get -y install --no-install-recommends symlinks
-symlinks -c /usr/lib/gcc/arm-linux-gnueabihf
+apt-get -y install --no-install-recommends libncurses-dev libglib2.0-dev gcc g++ symlinks
+
+symlinks -c /usr/lib/gcc/arm-linux-gnueabihf/
+symlinks -c /usr/lib/gcc/arm-linux-gnueabihf/*/
+echo "" > /etc/fstab
 apt-get -y clean
 rm -rf /var/cache/apt/*
 
@@ -62,7 +63,47 @@ EOF
 fi
 }
 
-backup_rootfs_disk() {
+build_target_rootfs_disk() {
+   echo "Based on: $ROOTFS_BASE_DISK"
+   cp $ROOTFS_BASE_DISK $ROOTFS_TARGET_DISK
+   CHROOT_SCRIPT="$BUILD_DIR/chroot-script.sh"
+   rm -rf  $CHROOT_SCRIPT
+
+cat <<EOF > $CHROOT_SCRIPT
+#!/bin/bash
+
+#libaio-dev libaio1 libc-dev-bin libc6-dev libelfg0 libfdt-dev libfdt1
+#libglib2.0-0 libglib2.0-bin libglib2.0-data libglib2.0-dev libpcre3-dev
+#libpcrecpp0 libpixman-1-0 libpixman-1-dev libyajl-dev libyajl2 linux-libc-dev  zlib1g-dev
+
+apt-get -y remove binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libasan0 libatomic1 libpython-stdlib \
+   libpython2.7-minimal libpython2.7-stdlib pkg-config python python-minimal python2.7 python2.7-minimal \
+   libcloog-isl4 libgcc-4.8-dev libgmp10 libgomp1 libisl10 libmpc3 libmpfr4 libncurses5-dev libstdc++-4.8-dev libtinfo-dev symlinks
+
+apt-get -y clean
+
+rm -rf /var/cache/apt/*
+rm -rf /var/log/apt
+#rm -rf /var/lib/apt
+#rm /usr/lib/apt/apt.systemd.daily
+#rm -rf /usr/include/*
+#rm -rf /include
+#rm -rf /usr/locale
+rm -rf /lib/*.a
+rm -rf /usr/lib/aarch64-linux-gnu/*.a
+#rm -rf /usr/share/*
+#rm -rf /share/*
+#rm -rf /usr/lib/aarch64-linux-gnu/perl-base
+EOF
+   export ROOTFS_DISK_PATH=$ROOTFS_TARGET_DISK
+   source $SCRIPTS_DIR/12-chroot-run.sh
+   chroot_run_script $CHROOT_SCRIPT
+   sync
+   rm -rf $CHROOT_SCRIPT
+   cleanup_on_exit
+}
+
+backup_base_rootfs_disk() {
    echo "Based on: $ROOTFS_BASE_DISK"
    $SCRIPTS_DIR/11-disk-image-to-tar.sh $ROOTFS_BASE_DISK $ROOTFS_BASE_TAR
 }
@@ -76,12 +117,25 @@ if [ "$1" == "--clean-rebuild" ]; then
    rm -rf "$ROOTFS_BASE_DISK"
    echo "delete $ROOTFS_BASE_TAR"
    rm -rf "$ROOTFS_BASE_TAR"
+   echo "delete $ROOTFS_TARGET_DISK"
+   rm -rf "$ROOTFS_TARGET_DISK"
 fi
 
 echo "Building $ROOTFS_BASE_DISK"
-[ ! -f $ROOTFS_BASE_DISK ] && create_rootfs_disk
+[ ! -f $ROOTFS_BASE_DISK ] && build_base_rootfs_disk
+[ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 1
+
 echo "Building $ROOTFS_BASE_TAR"
-[ ! -f $ROOTFS_BASE_TAR ] && backup_rootfs_disk
+[ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
+
+if [ "$1" == "--build-target" ]; then
+   echo "delete $ROOTFS_TARGET_DISK"
+   rm -rf "$ROOTFS_TARGET_DISK"
+   echo "Build: $ROOTFS_TARGET_DISK"
+   build_target_rootfs_disk
+   echo "target disk: $ROOTFS_TARGET_DISK"
+   chmod 666 $ROOTFS_TARGET_DISK
+fi
 
 chmod 666 $ROOTFS_BASE_DISK
 chmod 666 $ROOTFS_BASE_TAR

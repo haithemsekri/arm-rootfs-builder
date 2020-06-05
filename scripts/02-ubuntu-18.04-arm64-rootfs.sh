@@ -8,7 +8,7 @@ source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
 [ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
 [ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found"
 
-create_rootfs_disk() {
+build_base_rootfs_disk() {
 if [ -f $ROOTFS_BASE_TAR ]; then
    echo "Based on: $ROOTFS_BASE_TAR"
    $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_BASE_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
@@ -28,6 +28,7 @@ echo "APT::Install-Recommends "0";" >> /etc/apt/apt.conf.d/30norecommends
 echo "APT::Install-Suggests "0";" >> /etc/apt/apt.conf.d/30norecommends
 
 passwd
+
 apt-get -y clean
 apt-get -y update
 apt-get -y install --no-install-recommends apt-utils dialog
@@ -35,18 +36,19 @@ apt-get -y install --no-install-recommends locales
 locale-gen en_US.UTF-8
 
 apt-get -y upgrade
-apt-get -y install --no-install-recommends util-linux nano openssh-server
-apt-get -y install --no-install-recommends systemd udev systemd-sysv
-apt-get -y install --no-install-recommends net-tools iproute2 iputils-ping ethtool isc-dhcp-client
+apt-get -y install --no-install-recommends util-linux nano openssh-server systemd \
+	udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client
 
 ######################################Runtime libs######################################
-apt-get -q -y install --no-install-recommends libyajl-dev \
+apt-get install --no-install-recommends libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev
 
 ######################################Dev libs##########################################
-apt-get -y install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev libglib2.0-dev libsystemd-dev gcc g++
-apt-get -y install --no-install-recommends symlinks
-symlinks -c /usr/lib/aarch64-linux-gnu
+apt-get install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev \
+	libglib2.0-dev libsystemd-dev gcc g++ symlinks
+symlinks -c /usr/lib/aarch64-linux-gnu/
+symlinks -c /usr/lib/aarch64-linux-gnu/*/
+echo "" > /etc/fstab
 apt-get -y clean
 rm -rf /var/cache/apt/*
 
@@ -61,7 +63,50 @@ EOF
 fi
 }
 
-backup_rootfs_disk() {
+build_target_rootfs_disk() {
+   echo "Based on: $ROOTFS_BASE_DISK"
+   cp $ROOTFS_BASE_DISK $ROOTFS_TARGET_DISK
+   CHROOT_SCRIPT="$BUILD_DIR/chroot-script.sh"
+   rm -rf  $CHROOT_SCRIPT
+
+cat <<EOF > $CHROOT_SCRIPT
+#!/bin/bash
+
+# binutils binutils-aarch64-linux-gnu binutils-common dpkg-dev libaio-dev libaio1 libbinutils libc-dev-bin libc6-dev libdpkg-perl libexpat1 libfdt-dev libfdt1
+# libgdbm-compat4 libgdbm5 libglib2.0-0 libglib2.0-bin libglib2.0-data libglib2.0-dev libglib2.0-dev-bin libmpdec2 libpcre16-3 libpcre3-dev
+# libpcre32-3 libpcrecpp0v5 libperl5.26 libpixman-1-0 libpixman-1-dev libreadline7 libsqlite3-0 libyajl-dev libyajl2 linux-libc-dev readline-common xz-utils zlib1g-dev
+
+apt-get -y remove libpython3-stdlib libpython3.6-minimal libpython3.6-stdlib make mime-support \
+   patch perl perl-modules-5.26 pkg-config python3 \
+   python3-distutils python3-lib2to3 python3-minimal python3.6 python3.6-minimal \
+   cpp cpp-7 g++ g++-7 gcc gcc-7 gcc-7-base libasan4 libatomic1 libcc1-0 libgcc-7-dev \
+   libgomp1 libisl19 libitm1 liblsan0 libmpc3 libmpfr6 libncurses5-dev libstdc++-7-dev \
+   libsystemd-dev libtinfo-dev libtsan0 libubsan0 symlinks
+
+apt-get -y clean
+
+rm -rf /var/cache/apt
+#rm -rf /var/lib/apt
+rm -rf /var/log/apt
+#rm /usr/lib/apt/apt.systemd.daily
+#rm -rf /usr/include/*
+#rm -rf /include
+#rm -rf /usr/locale
+rm -rf /lib/*.a
+rm -rf /usr/lib/aarch64-linux-gnu/*.a
+#rm -rf /usr/share/*
+#rm -rf /share/*
+#rm -rf /usr/lib/aarch64-linux-gnu/perl-base
+EOF
+   export ROOTFS_DISK_PATH=$ROOTFS_TARGET_DISK
+   source $SCRIPTS_DIR/12-chroot-run.sh
+   chroot_run_script $CHROOT_SCRIPT
+   sync
+   rm -rf $CHROOT_SCRIPT
+   cleanup_on_exit
+}
+
+backup_base_rootfs_disk() {
    echo "Based on: $ROOTFS_BASE_DISK"
    $SCRIPTS_DIR/11-disk-image-to-tar.sh $ROOTFS_BASE_DISK $ROOTFS_BASE_TAR
 }
@@ -75,12 +120,25 @@ if [ "$1" == "--clean-rebuild" ]; then
    rm -rf "$ROOTFS_BASE_DISK"
    echo "delete $ROOTFS_BASE_TAR"
    rm -rf "$ROOTFS_BASE_TAR"
+   echo "delete $ROOTFS_TARGET_DISK"
+   rm -rf "$ROOTFS_TARGET_DISK"
 fi
 
 echo "Building $ROOTFS_BASE_DISK"
-[ ! -f $ROOTFS_BASE_DISK ] && create_rootfs_disk
+[ ! -f $ROOTFS_BASE_DISK ] && build_base_rootfs_disk
+[ ! -f $ROOTFS_BASE_DISK ] && echo "$ROOTFS_BASE_DISK : file not found" && exit 1
+
 echo "Building $ROOTFS_BASE_TAR"
-[ ! -f $ROOTFS_BASE_TAR ] && backup_rootfs_disk
+[ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
+
+if [ "$1" == "--build-target" ]; then
+   echo "delete $ROOTFS_TARGET_DISK"
+   rm -rf "$ROOTFS_TARGET_DISK"
+   echo "Build: $ROOTFS_TARGET_DISK"
+   build_target_rootfs_disk
+   echo "target disk: $ROOTFS_TARGET_DISK"
+   chmod 666 $ROOTFS_TARGET_DISK
+fi
 
 chmod 666 $ROOTFS_BASE_DISK
 chmod 666 $ROOTFS_BASE_TAR

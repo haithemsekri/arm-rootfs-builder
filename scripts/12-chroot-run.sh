@@ -19,20 +19,17 @@ chroot_mount_pseudo_fs () {
 }
 
 chroot_umount_pseudo_fs () {
-   sync
-   echo "chroot_umount_pseudo_fs"
-   umount ${RTFS_MNT_DIR}/dev/pts
-   umount ${RTFS_MNT_DIR}/proc
-   umount ${RTFS_MNT_DIR}/dev
-   umount ${RTFS_MNT_DIR}/sys
-   umount ${RTFS_MNT_DIR}/tmp
+   umount ${RTFS_MNT_DIR}/dev/pts 2>/dev/null
+   umount ${RTFS_MNT_DIR}/proc 2>/dev/null
+   umount ${RTFS_MNT_DIR}/dev 2>/dev/null
+   umount ${RTFS_MNT_DIR}/sys 2>/dev/null
+   umount ${RTFS_MNT_DIR}/tmp 2>/dev/null
 
-   echo "force chroot_umount_pseudo_fs"
-   umount -f -l ${RTFS_MNT_DIR}/dev/pts
-   umount -f -l ${RTFS_MNT_DIR}/proc
-   umount -f -l ${RTFS_MNT_DIR}/dev 
-   umount -f -l ${RTFS_MNT_DIR}/sys 
-   umount -f -l ${RTFS_MNT_DIR}/tmp
+   umount -f -l ${RTFS_MNT_DIR}/dev/pts 2>/dev/null
+   umount -f -l ${RTFS_MNT_DIR}/proc 2>/dev/null
+   umount -f -l ${RTFS_MNT_DIR}/dev  2>/dev/null
+   umount -f -l ${RTFS_MNT_DIR}/sys  2>/dev/null
+   umount -f -l ${RTFS_MNT_DIR}/tmp 2>/dev/null
 }
 
 cleanup_on_exit () {
@@ -44,7 +41,7 @@ cleanup_on_exit () {
       chroot_umount_pseudo_fs
       umount $RTFS_MNT_DIR
       echo "force cleanup_on_exit"
-      umount -f -l $RTFS_MNT_DIR
+      umount -f -l $RTFS_MNT_DIR 2>/dev/null
    fi
 
    rm -rf $RTFS_MNT_DIR
