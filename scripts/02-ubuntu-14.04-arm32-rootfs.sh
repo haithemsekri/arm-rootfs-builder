@@ -44,7 +44,7 @@ apt-get -y install --no-install-recommends libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev
 
 ######################################Dev libs##########################################
-apt-get -y install --no-install-recommends libncurses-dev libglib2.0-dev gcc g++ symlinks
+apt-get -y install --no-install-recommends libncurses-dev libglib2.0-dev libgcc-4.8-dev libstdc++-4.8-dev symlinks uuid-dev
 
 symlinks -c /usr/lib/gcc/arm-linux-gnueabihf/
 symlinks -c /usr/lib/gcc/arm-linux-gnueabihf/*/

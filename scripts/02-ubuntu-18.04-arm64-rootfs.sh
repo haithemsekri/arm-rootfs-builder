@@ -40,12 +40,12 @@ apt-get -y install --no-install-recommends util-linux nano openssh-server system
 	udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client
 
 ######################################Runtime libs######################################
-apt-get install --no-install-recommends libyajl-dev \
+apt-get -y install --no-install-recommends libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev
 
 ######################################Dev libs##########################################
-apt-get install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev \
-	libglib2.0-dev libsystemd-dev gcc g++ symlinks
+apt-get -y install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev \
+	libglib2.0-dev libsystemd-dev symlinks uuid-dev
 symlinks -c /usr/lib/aarch64-linux-gnu/
 symlinks -c /usr/lib/aarch64-linux-gnu/*/
 echo "" > /etc/fstab

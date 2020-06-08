@@ -71,6 +71,8 @@ yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-de
 echo "Run symlinks"
 symlinks -c /usr/lib/gcc/aarch64-redhat-linux/
 symlinks -c /usr/lib/gcc/aarch64-redhat-linux/*/
+symlinks -c /usr/lib/
+symlinks -c /usr/lib64/
 echo "" > /etc/fstab
 yum clean all
 

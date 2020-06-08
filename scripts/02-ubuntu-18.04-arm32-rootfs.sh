@@ -45,7 +45,7 @@ apt-get -y install --no-install-recommends libyajl-dev \
 
 ######################################Dev libs##########################################
 apt-get -y install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev \
-   libsystemd-dev gcc g++ symlinks
+   libsystemd-dev symlinks  uuid-dev
 
 symlinks -c /usr/lib/arm-linux-gnueabihf/
 symlinks -c /usr/lib/arm-linux-gnueabihf/*/
