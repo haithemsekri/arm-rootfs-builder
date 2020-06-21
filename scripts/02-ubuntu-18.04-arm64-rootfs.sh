@@ -1,109 +1,87 @@
 #!/bin/bash
 
-source $(dirname $(realpath $0))/00-distro-rootfs-env.sh
+SCRIPTS_DIR="$(dirname $(realpath $0))"
+[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="https://iweb.dl.sourceforge.net/project/arm-rootfs-ressources/ubuntu-base-18.04.4-base-arm64.tar.xz"
 
-[ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="http://cdimage.ubuntu.com/ubuntu-base/releases/18.04/release/ubuntu-base-18.04.4-base-arm64.tar.gz"
-[ -z $ROOTFS_DL_TAR ] && ROOTFS_DL_TAR="$DL_DIR/$(basename $ROOTFS_DL_URL)"
-
-[ ! -f $ROOTFS_DL_TAR ] && wget $ROOTFS_DL_URL -O $ROOTFS_DL_TAR
-[ ! -f $ROOTFS_DL_TAR ] && echo "$ROOTFS_DL_TAR : file not found"
-
-build_base_rootfs_disk() {
-if [ -f $ROOTFS_BASE_TAR ]; then
-   echo "Based on: $ROOTFS_BASE_TAR"
-   $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_BASE_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
-else
-   echo "Based on: $ROOTFS_DL_TAR"
-   $SCRIPTS_DIR/10-tar-to-disk-image.sh $ROOTFS_DL_TAR $ROOTFS_BASE_DISK $DISTRO_SIZE_MB
-   CHROOT_SCRIPT="$BUILD_DIR/chroot-script.sh"
-   rm -rf  $CHROOT_SCRIPT
-
-cat <<EOF > $CHROOT_SCRIPT
+export BASE_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
-######################################Basic distro######################################
+cd /
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
-echo "LANG=en_US.UTF-8" > /etc/default/locale
 echo "APT::Install-Recommends "0";" >> /etc/apt/apt.conf.d/30norecommends
 echo "APT::Install-Suggests "0";" >> /etc/apt/apt.conf.d/30norecommends
+echo "ubuntu-arm64" > /etc/hostname
+echo "127.0.0.1    ubuntu-arm64    localhost" >> /etc/hosts
+
+rm /etc/default/locale
+touch /etc/default/locale
+echo "LANGUAGE="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_ALL="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_PAPER="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_NUMERIC="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_IDENTIFICATION="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_MEASUREMENT="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_NAME="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_MESSAGES="POSIX"" >> /etc/default/locale
+echo "LC_TELEPHONE="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_ADDRESS="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_MONETARY="en_US.UTF-8"" >> /etc/default/locale
+echo "LC_TIME="en_US.UTF-8"" >> /etc/default/locale
+echo "LANG="en_US.UTF-8"" >> /etc/default/locale
+source /etc/default/locale
 
 passwd
-
 apt-get -y clean
 apt-get -y update
-apt-get -y install --no-install-recommends apt-utils dialog
-apt-get -y install --no-install-recommends locales
-locale-gen en_US.UTF-8
+apt-get -y install --no-install-recommends apt-utils dialog locales
+
+locale-gen "en_US.UTF-8"
+update-locale LANGUAGE="en_US.UTF-8" LC_PAPER="en_US.UTF-8" \
+   LC_NUMERIC="en_US.UTF-8" LC_IDENTIFICATION="en_US.UTF-8" LC_MEASUREMENT="en_US.UTF-8" \
+   LC_NAME="en_US.UTF-8" LC_MESSAGES="POSIX" LC_TELEPHONE="en_US.UTF-8" LC_ADDRESS="en_US.UTF-8" \
+   LC_MONETARY="en_US.UTF-8" LC_TIME="en_US.UTF-8" LANG="en_US.UTF-8"
+
+ln -fs /usr/share/zoneinfo/Europe/Stockholm /etc/localtime
+
+hostname "ubuntu-arm64"
+hostname
 
 apt-get -y upgrade
 apt-get -y install --no-install-recommends util-linux nano openssh-server systemd \
-	udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client
+	udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client libyajl-dev \
+   libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev libgcc-7-dev libstdc++-7-dev libncurses-dev \
+   libglib2.0-dev uuid-dev symlinks gcc g++ libsystemd-dev
 
-######################################Runtime libs######################################
-apt-get -y install --no-install-recommends libyajl-dev \
-   libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev
+/14-cross-build-env.sh
 
-######################################Dev libs##########################################
-apt-get -y install --no-install-recommends libgcc-7-dev libstdc++-7-dev libncurses-dev \
-	libglib2.0-dev libsystemd-dev symlinks uuid-dev
-symlinks -c /usr/lib/aarch64-linux-gnu/
-symlinks -c /usr/lib/aarch64-linux-gnu/*/
+find / -type l -name "*.so" | xargs dirname | xargs symlinks -c
 echo "" > /etc/fstab
 apt-get -y clean
-rm -rf /var/cache/apt/*
-
+df -h .
 EOF
+)
 
-   export ROOTFS_DISK_PATH=$ROOTFS_BASE_DISK
-   source $SCRIPTS_DIR/12-chroot-run.sh
-   chroot_run_script $CHROOT_SCRIPT
-   rm -rf $CHROOT_SCRIPT
-   rsync -avlz  $SCRIPTS_DIR/overlays/  ${RTFS_MNT_DIR}/
-   cleanup_on_exit
-fi
-}
-
-build_target_rootfs_disk() {
-   echo "Based on: $ROOTFS_BASE_DISK"
-   cp $ROOTFS_BASE_DISK $ROOTFS_TARGET_DISK
-   CHROOT_SCRIPT="$BUILD_DIR/chroot-script.sh"
-   rm -rf  $CHROOT_SCRIPT
-
-cat <<EOF > $CHROOT_SCRIPT
+export BASE_ROOTFS_POST_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
-
-# binutils binutils-aarch64-linux-gnu binutils-common dpkg-dev libaio-dev libaio1 libbinutils libc-dev-bin libc6-dev libdpkg-perl libexpat1 libfdt-dev libfdt1
-# libgdbm-compat4 libgdbm5 libglib2.0-0 libglib2.0-bin libglib2.0-data libglib2.0-dev libglib2.0-dev-bin libmpdec2 libpcre16-3 libpcre3-dev
-# libpcre32-3 libpcrecpp0v5 libperl5.26 libpixman-1-0 libpixman-1-dev libreadline7 libsqlite3-0 libyajl-dev libyajl2 linux-libc-dev readline-common xz-utils zlib1g-dev
-
-apt-get -y remove libpython3-stdlib libpython3.6-minimal libpython3.6-stdlib make mime-support \
-   patch perl perl-modules-5.26 pkg-config python3 \
-   python3-distutils python3-lib2to3 python3-minimal python3.6 python3.6-minimal \
-   cpp cpp-7 g++ g++-7 gcc gcc-7 gcc-7-base libasan4 libatomic1 libcc1-0 libgcc-7-dev \
-   libgomp1 libisl19 libitm1 liblsan0 libmpc3 libmpfr6 libncurses5-dev libstdc++-7-dev \
-   libsystemd-dev libtinfo-dev libtsan0 libubsan0 symlinks
-
-apt-get -y clean
-
-rm -rf /var/cache/apt
-#rm -rf /var/lib/apt
-rm -rf /var/log/apt
-#rm /usr/lib/apt/apt.systemd.daily
-#rm -rf /usr/include/*
-#rm -rf /include
-#rm -rf /usr/locale
-rm -rf /lib/*.a
-rm -rf /usr/lib/aarch64-linux-gnu/*.a
-#rm -rf /usr/share/*
-#rm -rf /share/*
-#rm -rf /usr/lib/aarch64-linux-gnu/perl-base
+[ ! -d \$1 ] &&  echo "Invalid arg1: no such file or directory" && exit 1
+rsync -avlz  $SCRIPTS_DIR/overlays/  \$1/
 EOF
-   export ROOTFS_DISK_PATH=$ROOTFS_TARGET_DISK
-   source $SCRIPTS_DIR/12-chroot-run.sh
-   chroot_run_script $CHROOT_SCRIPT
-   sync
-   rm -rf $CHROOT_SCRIPT
-   cleanup_on_exit
-}
+)
+
+export TARGET_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
+#!/bin/bash
+source /etc/default/locale
+apt-get -y remove cpp cpp-7 g++ g++-7 gcc gcc-7 libcc1-0 libisl19 libmpc3 libmpfr6 libsystemd-dev symlinks
+apt-get -y autoremove
+apt-get clean
+rm -rf /var/cache/*
+rm -rf /var/log/*
+rm -rf /var/lib/apt/lists/*
+find / -type f -name "lib*.a" | xargs rm -rf
+find / -type f -name "*.h" | xargs rm -rf
+rm -rf /include/* /usr/include/* /usr/share/doc/* /usr/share/X11/* /usr/share/man/*
+df -h .
+EOF
+)
 
 source $(dirname $(realpath $0))/00-distro-rootfs-common.sh

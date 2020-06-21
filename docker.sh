@@ -9,8 +9,8 @@ docker run --privileged --rm -it -v /dev:/dev -v  $(pwd):/home/$USER/   -e USER=
 
 
 
-sudo docker ps -l
-sudo docker commit bebfdd4805dc ehdevops/debian-stretch-slim
+docker ps -l
+docker commit bebfdd4805dc ehdevops/debian-stretch-slim
 
 apt install xz-utils wget kpartx qemu-user-static qemu-utils rsync
 

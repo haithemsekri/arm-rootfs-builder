@@ -13,8 +13,7 @@ EXTRA_ARGS="$4 $5 $6"
 #Wrokspace :##########################################
 [ -z $TARGET_BUILD_NAME ] && TARGET_BUILD_NAME="$TARGET_ARCH-$TARGET_NAME"
 [ -z $WORKSPACE ] && WORKSPACE="$(realpath $(dirname $(realpath $0)))"
-[ -z $DL_DIR ] && export DL_DIR="$WORKSPACE/../dl"
-[ -z $IMAGES_DIR ] && export IMAGES_DIR="$WORKSPACE/images-$TARGET_BUILD_NAME"
+[ -z $DL_DIR ] && export DL_DIR="$WORKSPACE/dl"
 [ -z $BUILD_DIR ] && export BUILD_DIR="$WORKSPACE/$DISTRO-$TARGET_BUILD_NAME"
 [ ! -d $DL_DIR ] && mkdir $DL_DIR
 [ ! -d $BUILD_DIR ] && mkdir $BUILD_DIR
