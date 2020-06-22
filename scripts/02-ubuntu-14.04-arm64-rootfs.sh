@@ -18,6 +18,8 @@ EOF
 export BASE_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 cd /
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
@@ -28,7 +30,6 @@ echo "127.0.0.1    ubuntu-arm64    localhost" > /etc/hosts
 hostname "ubuntu-arm64"
 hostname
 echo "tmpfs  /var/run  tmpfs  defaults,noatime,nosuid,nodev,noexec,mode=1777  0  0" > /etc/fstab
-echo $PATH
 passwd
 
 rm /etc/default/locale
@@ -90,6 +91,8 @@ EOF
 export TARGET_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 source /etc/default/locale
 apt-get -y remove binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libcloog-isl4 libgmp10 libisl10 libmpc3 libmpfr4 symlinks
 apt-get -y autoremove

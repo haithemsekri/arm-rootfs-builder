@@ -17,6 +17,8 @@ EOF
 export BASE_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 cd /
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
@@ -27,7 +29,6 @@ echo "127.0.0.1    ubuntu-arm64    localhost" > /etc/hosts
 hostname "ubuntu-arm64"
 hostname
 echo "tmpfs  /var/run  tmpfs  defaults,noatime,nosuid,nodev,noexec,mode=1777  0  0" > /etc/fstab
-echo $PATH
 passwd
 
 rm /etc/default/locale
@@ -62,7 +63,7 @@ ln -fs /usr/share/zoneinfo/Europe/Stockholm /etc/localtime
 
 apt-get -y upgrade
 apt-get -y install --no-install-recommends util-linux nano openssh-server systemd \
-	udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client libyajl-dev \
+   udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev libgcc-7-dev libstdc++-7-dev libncurses-dev \
    libglib2.0-dev uuid-dev symlinks gcc g++ libsystemd-dev
 
@@ -93,6 +94,8 @@ EOF
 export TARGET_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 source /etc/default/locale
 apt-get -y remove cpp cpp-7 g++ g++-7 gcc gcc-7 libcc1-0 libisl19 libmpc3 libmpfr6 libsystemd-dev symlinks
 apt-get -y autoremove
