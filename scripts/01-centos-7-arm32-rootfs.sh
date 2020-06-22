@@ -6,10 +6,11 @@ export BASE_ROOTFS_PRE_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 [ ! -d \$1 ] &&  echo "Invalid arg1: no such file or directory" && exit 1
 umount \$1/proc
-cp $SCRIPTS_DIR/01-centos-7-arm32-cpuinfo \$1/proc/cpuinfo
+cp $SCRIPTS_DIR/files/arm32-cpuinfo \$1/proc/cpuinfo
 rm -rf  \$1/root/*
 cp $SCRIPTS_DIR/files/bashrc  \$1/root/.bashrc.orig
 cp $SCRIPTS_DIR/files/profile  \$1/root/.profile.orig
+cp $SCRIPTS_DIR/files/timesyncd.conf  \$1/etc/systemd/timesyncd.conf
 EOF
 )
 
@@ -42,13 +43,15 @@ yum -y remove grub2-common NetworkManager-wifi uboot-images-armv8 postfix chrony
    kernel-tools NetworkManager-team grub2 selinux-policy-targeted passwd acl net-tools extlinux-bootloader \
    raspberrypi2-kernel raspberrypi2-kernel-devel raspberrypi2-kernel4 raspberrypi2-firmware raspberrypi-vc-libs-devel raspberrypi2-kernel4
 
-yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-devel pixman-devel libgcc glibc-devel gcc gcc-c++ openssh-server \
+yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-devel pixman-devel libgcc glibc-devel gcc gcc-c++ openssh-server tp ntpdate \
    glib2-devel libstdc++-devel ncurses-devel uuid-devel systemd-devel symlinks zlib-devel libuuid-devel
 
 /14-cross-build-env.sh
 
 find / -type l -name "*.so" | xargs dirname | xargs symlinks -c
 find / \( -name "ld-linux*.so*" -o  -name "libstdc++.so" -o  -name "libpthread.so" -o  -name "libc.so" -o  -name "libcrypt.so" \) | xargs dirname | xargs symlinks -c
+
+ln -s /usr/lib/systemd/system/ntpd.service /etc/systemd/system/multi-user.target.wants/ntpd.service
 
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.orig
 cat /etc/ssh/sshd_config | \
@@ -75,7 +78,7 @@ export TARGET_ROOTFS_PRE_CHROOT_SCRIPT=$(cat << EOF
 sync
 umount \$1/proc
 umount -f -l \$1/proc
-cp $SCRIPTS_DIR/01-centos-7-arm32-cpuinfo \$1/proc/cpuinfo
+cp $SCRIPTS_DIR/files/arm32-cpuinfo \$1/proc/cpuinfo
 EOF
 )
 
