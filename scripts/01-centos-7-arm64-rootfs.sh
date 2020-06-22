@@ -2,6 +2,15 @@
 SCRIPTS_DIR="$(dirname $(realpath $0))"
 [ -z $ROOTFS_DL_URL ]  && ROOTFS_DL_URL="https://iweb.dl.sourceforge.net/project/arm-rootfs-ressources/centos-7-2003-aarch64-rootfs.tar.xz"
 
+export BASE_ROOTFS_PRE_CHROOT_SCRIPT=$(cat << EOF
+#!/bin/bash
+[ ! -d \$1 ] &&  echo "Invalid arg1: no such file or directory" && exit 1
+rm -rf  \$1/root/*
+cp $SCRIPTS_DIR/files/bashrc  \$1/root/.bashrc.orig
+cp $SCRIPTS_DIR/files/profile  \$1/root/.profile.orig
+EOF
+)
+
 export BASE_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 cd /
@@ -11,11 +20,12 @@ echo "centos7-arm64" > /etc/hostname
 echo "127.0.0.1    centos7-arm64    localhost" > /etc/hosts
 hostname "centos7-arm64 "
 hostname
+echo "" > /etc/fstab
 passwd
 
 yum -y update --exclude=*raspberrypi*  --exclude=*kernel* --exclude=redhat-release* --exclude=centos-release*
 #rpm -qa --queryformat 'yum -y remove %-25{name} \n' > /cleanup.sh
-yum -y remove openssh-server grub2-common NetworkManager-wifi uboot-images-armv8 postfix chrony basesystem parted dracut-config-extradrivers sg3_utils man-db \
+yum -y remove grub2-common NetworkManager-wifi uboot-images-armv8 postfix chrony basesystem parted dracut-config-extradrivers sg3_utils man-db \
    shim-aa64 efibootmgr grubby grub2-efi-aa64-modules rootfiles iwl6050-firmware iwl6000g2a-firmware iwl5150-firmware iwl4965-firmware iwl3160-firmware \
    iwl2000-firmware iwl105-firmware iwl100-firmware systemd-sysv libnl3 file libunistring e2fsprogs-libs ethtool python-decorator jansson python-slip \
    python-configobj python-linux-procfs python-schedutils gettext-libs less libteam ipset python-gobject-base fipscheck mariadb-libs logrotate mozjs17 \
@@ -30,7 +40,7 @@ yum -y remove openssh-server grub2-common NetworkManager-wifi uboot-images-armv8
    kernel-tools NetworkManager-team grub2 selinux-policy-targeted libnfnetlink sysvinit-tools raspberrypi2-kernel raspberrypi2-kernel-devel raspberrypi2-kernel4 \
    raspberrypi2-firmware raspberrypi-vc-libs-devel  raspberrypi2-kernel4
 
-yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-devel pixman-devel libgcc glibc-devel gcc gcc-c++ \
+yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-devel pixman-devel libgcc glibc-devel gcc gcc-c++ openssh-server \
    glib2-devel libstdc++-devel ncurses-devel uuid-devel systemd-devel symlinks zlib-devel libuuid-devel
 
 /14-cross-build-env.sh
@@ -38,32 +48,44 @@ yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-de
 find / -type l -name "*.so" | xargs dirname | xargs symlinks -c
 find / \( -name "ld-linux*.so*" -o  -name "libstdc++.so" -o  -name "libpthread.so" -o  -name "libc.so" -o  -name "libcrypt.so" \) | xargs dirname | xargs symlinks -c
 
-echo "" > /etc/fstab
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.orig
+cat /etc/ssh/sshd_config | \
+   sed 's/\nPermitRootLogin .*/\n#PermitRootLogin/g' | \
+   sed 's/\nPermitEmptyPasswords .*/\n#PermitEmptyPasswords/g' > /etc/ssh/sshd_config.tmp
+cat /etc/ssh/sshd_config.tmp | \
+   sed 's/PermitRootLogin .*no/\nPermitRootLogin yes/g' | \
+   sed 's/PermitEmptyPasswords .*yes/\n#PermitEmptyPasswords no/g' > /etc/ssh/sshd_config
+rm /etc/ssh/sshd_config.tmp
+echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+echo "PermitEmptyPasswords no" >> /etc/ssh/sshd_config
+
+cp /root/.bashrc.orig /root/.bashrc
+cp /root/.profile.orig /root/.profile
 rm -rf /lib/firmware/*
-rm -rf /root/*
 df -h .
 EOF
 )
 
 export TARGET_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
-printenv
 yum -y remove gcc gcc-c++ systemd-devel
 yum clean all
 find / -type f -name "lib*.a" | xargs rm -rf
 find / -type f -name "*.h" | xargs rm -rf
-mv /usr/share/locale/en_US /
-mv /usr/share/locale/uk /
 rm -rf /usr/share/doc/*
-rm -rf /usr/share/locale/*
 rm -rf /usr/lib/*.a
 rm -rf /usr/lib/gcc/*/*/*.a
-mv /en_US /uk /usr/share/locale/
-rm /usr/lib/locale/locale-archive
+# mv /usr/share/locale/en_US /
+# mv /usr/share/locale/uk /
+# rm -rf /usr/share/locale/*
+# mv /en_US /uk /usr/share/locale/
+# rm /usr/lib/locale/locale-archive
 rm -rf /var/lib/yum/yumdb/*
 rm -rf /var/cache/yum/*
 rm -rf /usr/local/share/man/*
 rm -rf /include/* /usr/include/* /usr/share/doc/* /usr/share/X11/* /usr/share/man/*
+cp /root/.bashrc.orig /root/.bashrc
+cp /root/.profile.orig /root/.profile
 df -h .
 EOF
 )

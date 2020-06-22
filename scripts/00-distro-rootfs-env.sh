@@ -11,6 +11,5 @@
 [ -z $MKFS_CMD ]       && export MKFS_CMD="mkfs.$EXT_FS_TYPE"
 
 [ -z $ROOTFS_BASE_DISK ]    && export ROOTFS_BASE_DISK="$BUILD_DIR/$DISTRO_NAME-base.$EXT_FS_TYPE"
-[ -z $ROOTFS_BASE_TAR ]     && export ROOTFS_BASE_TAR="$BUILD_DIR/$DISTRO_NAME-base.tar.gz"
+[ -z $ROOTFS_BASE_TAR ]     && export ROOTFS_BASE_TAR="$BUILD_DIR/$DISTRO_NAME-base.tar.xz"
 [ -z $ROOTFS_TARGET_DISK ]  && export ROOTFS_TARGET_DISK="$BUILD_DIR/$DISTRO_NAME-target.$EXT_FS_TYPE"
-[ -z $SYSROOT_TARGET_TAR ]  && export SYSROOT_TARGET_TAR="$BUILD_DIR/target-sysroot.tar.gz"
