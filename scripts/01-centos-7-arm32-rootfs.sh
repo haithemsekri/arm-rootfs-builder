@@ -11,6 +11,8 @@ rm -rf  \$1/root/*
 cp $SCRIPTS_DIR/files/bashrc  \$1/root/.bashrc.orig
 cp $SCRIPTS_DIR/files/profile  \$1/root/.profile.orig
 cp $SCRIPTS_DIR/files/timesyncd.conf  \$1/etc/systemd/timesyncd.conf
+cp $SCRIPTS_DIR/files/ntpdate  \$1/etc/sysconfig/ntpdate
+cp $SCRIPTS_DIR/files/ifcfg-eth0-dhcp  \$1/etc/sysconfig/network-scripts/ifcfg-eth0
 EOF
 )
 
@@ -43,7 +45,7 @@ yum -y remove grub2-common NetworkManager-wifi uboot-images-armv8 postfix chrony
    kernel-tools NetworkManager-team grub2 selinux-policy-targeted passwd acl net-tools extlinux-bootloader \
    raspberrypi2-kernel raspberrypi2-kernel-devel raspberrypi2-kernel4 raspberrypi2-firmware raspberrypi-vc-libs-devel raspberrypi2-kernel4
 
-yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-devel pixman-devel libgcc glibc-devel gcc gcc-c++ openssh-server tp ntpdate \
+yum install -y dhclient iputils nano net-tools yajl-devel libfdt-devel libaio-devel pixman-devel libgcc glibc-devel gcc gcc-c++ openssh-server ntp ntpdate \
    glib2-devel libstdc++-devel ncurses-devel uuid-devel systemd-devel symlinks zlib-devel libuuid-devel
 
 /14-cross-build-env.sh

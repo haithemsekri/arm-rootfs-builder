@@ -1,0 +1,7 @@
+TYPE=Ethernet
+BOOTPROTO=dhcp
+NAME=eth0
+DEVICE=eth0
+ONBOOT=yes
+DHCPV6C=no
+IPV6INIT=no

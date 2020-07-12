@@ -18,7 +18,7 @@ MTAB_ENTRY="$(mount | egrep "$SRC_DISK_PATH" | egrep "$TMP_DIR")"
 
 echo "Tar: $TMP_DIR"
 cd $TMP_DIR
-tar --exclude="lost+found" -I 'pxz -T 0 -6' -cf $DEST_TAR_PATH .
+tar --exclude="lost+found" -I 'pxz -T 0 -9' -cf $DEST_TAR_PATH .
 chmod 666 $DEST_TAR_PATH
 cd -
 

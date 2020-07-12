@@ -18,8 +18,9 @@ LIB_NCURSES5="$(find / -name libncurses.so.5)"
 if [[ ! -z $LIB_NCURSES ]] && [[ ! -z $LIB_NCURSES5 ]]; then
    unlink $LIB_NCURSES
    ln -s $LIB_NCURSES5 $LIB_NCURSES
-   symlinks -c "$(dirname $LIB_NCURSES)"
 fi
+
+find / \( -name "ld-linux*.so*" -o  -name "libstdc++.so" -o  -name "libpthread.so" -o  -name "libc.so" -o  -name "libcrypt.so" \) | xargs dirname | xargs symlinks -c
 
 cat << EOF > cross-build-env.sh
 #!/bin/bash

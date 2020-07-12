@@ -12,12 +12,15 @@ cp $SCRIPTS_DIR/files/profile  \$1/root/.bash_profile.orig
 cp $SCRIPTS_DIR/files/bashrc  \$1/root/.bashrc
 cp $SCRIPTS_DIR/files/profile  \$1/root/.bash_profile
 cp $SCRIPTS_DIR/files/ttyhvc0.conf  \$1/etc/init/ttyhvc0.conf
+cp $SCRIPTS_DIR/files/timesyncd.conf  \$1/etc/systemd/timesyncd.conf
 EOF
 )
 
 export BASE_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 cd /
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
@@ -64,7 +67,7 @@ ln -fs /usr/share/zoneinfo/Europe/Stockholm /etc/localtime
 apt-get -y upgrade
 apt-get -y install --no-install-recommends util-linux nano openssh-server udev net-tools iproute2 \
    iputils-ping ethtool isc-dhcp-client realpath libyajl-dev libfdt-dev libaio-dev libpixman-1-dev \
-   libglib2.0-dev libgcc-4.8-dev libstdc++-4.8-dev libncurses-dev uuid-dev gcc g++ symlinks
+   libglib2.0-dev libgcc-4.8-dev libstdc++-4.8-dev libncurses-dev uuid-dev gcc g++ symlinks ntp ntpdate
 
 /14-cross-build-env.sh
 
@@ -82,6 +85,7 @@ echo "PermitEmptyPasswords no" >> /etc/ssh/sshd_config
 cp /root/.bashrc.orig /root/.bashrc
 cp /root/.profile.orig /root/.bash_profile
 rm -rf /lib/firmware/*
+rm -rf /boot/*
 apt-get -y clean
 df -h .
 EOF
@@ -90,6 +94,8 @@ EOF
 export TARGET_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 source /etc/default/locale
 apt-get -y remove binutils cpp cpp-4.8 g++ g++-4.8 gcc gcc-4.8 libcloog-isl4 libgmp10 libisl10 libmpc3 libmpfr4 symlinks
 apt-get -y autoremove

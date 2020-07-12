@@ -16,37 +16,32 @@ chroot_mount_pseudo_fs () {
    mount -o bind /dev/pts ${RTFS_MNT_DIR}/dev/pts
    mount -o bind /sys     ${RTFS_MNT_DIR}/sys
    mount -o bind /tmp     ${RTFS_MNT_DIR}/tmp
+   mount -o bind /tmp     ${RTFS_MNT_DIR}/run
+}
+
+if_mounted_umount() {
+   MTAB_ENTRY="$(mount | egrep "$1")"
+   [ ! -z "$MTAB_ENTRY" ] && echo "umount $1" && umount $1
+   MTAB_ENTRY="$(mount | egrep "$1")"
+   [ ! -z "$MTAB_ENTRY" ] && echo "force umount $1" && umount -f -l $1
 }
 
 chroot_umount_pseudo_fs () {
    sync
-
    RUNNING_PROCS="$(lsof $RTFS_MNT_DIR 2>/dev/null | grep "root  rtd")"
    [ ! -z "$RUNNING_PROCS" ] && echo "Stop Pids:" && echo $RUNNING_PROCS && lsof $RTFS_MNT_DIR 2>/dev/null | grep "root  rtd" | awk '{print $2}' | xargs kill -9
-
-   umount ${RTFS_MNT_DIR}/dev/pts  2>/dev/null
-   umount ${RTFS_MNT_DIR}/dev      2>/dev/null
-   umount ${RTFS_MNT_DIR}/proc     2>/dev/null
-   umount ${RTFS_MNT_DIR}/sys      2>/dev/null
-   umount ${RTFS_MNT_DIR}/tmp      2>/dev/null
+   if_mounted_umount ${RTFS_MNT_DIR}/dev/pts
+   if_mounted_umount ${RTFS_MNT_DIR}/dev
+   if_mounted_umount ${RTFS_MNT_DIR}/proc
+   if_mounted_umount ${RTFS_MNT_DIR}/sys
+   if_mounted_umount ${RTFS_MNT_DIR}/tmp
+   if_mounted_umount ${RTFS_MNT_DIR}/run
 }
 
 cleanup_on_exit () {
-   MTAB_ENTRY="$(mount | egrep "$ROOTFS_DISK_PATH" | egrep "$RTFS_MNT_DIR")"
-   if [ ! -z "$MTAB_ENTRY" ]; then
-      echo "cleanup_on_exit"
-      chroot_umount_pseudo_fs
-      umount $RTFS_MNT_DIR
-      if [ ! $? -eq 0 ]; then
-         echo "Force umount"
-         umount -f -l ${RTFS_MNT_DIR}/dev/pts 2>/dev/null
-         umount -f -l ${RTFS_MNT_DIR}/dev     2>/dev/null
-         umount -f -l ${RTFS_MNT_DIR}/proc    2>/dev/null
-         umount -f -l ${RTFS_MNT_DIR}/sys     2>/dev/null
-         umount -f -l ${RTFS_MNT_DIR}/tmp     2>/dev/null
-         umount -f -l $RTFS_MNT_DIR           2>/dev/null
-      fi
-   fi
+   echo "cleanup_on_exit"
+   chroot_umount_pseudo_fs
+   if_mounted_umount ${RTFS_MNT_DIR}
 }
 
 chroot_run_script () {

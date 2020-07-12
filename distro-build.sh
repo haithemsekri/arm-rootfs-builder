@@ -31,6 +31,8 @@ elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-14.04-arm32" ]]; then
    $WORKSPACE/scripts/02-ubuntu-14.04-arm32-rootfs.sh $EXTRA_ARGS
 elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-14.04-arm64" ]]; then
    $WORKSPACE/scripts/02-ubuntu-14.04-arm64-rootfs.sh $EXTRA_ARGS
+elif [[ "$DISTRO-$TARGET_ARCH" == "ubuntu-20.04-arm64" ]]; then
+   $WORKSPACE/scripts/02-ubuntu-20.04-arm64-rootfs.sh $EXTRA_ARGS
 else
    echo "Invalid DISTRO: $DISTRO-$TARGET_ARCH"
    exit 0

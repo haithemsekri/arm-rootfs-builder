@@ -41,6 +41,8 @@ else
       chroot_run_script "$BUILD_DIR/rootfs-script.sh"
    fi
 
+   chroot_umount_pseudo_fs
+
    if [ ! -z "$BASE_ROOTFS_POST_CHROOT_SCRIPT" ]; then
       echo "Run : BASE_ROOTFS_POST_CHROOT_SCRIPT"
       echo "$BASE_ROOTFS_POST_CHROOT_SCRIPT" > "$BUILD_DIR/rootfs-script.sh"
@@ -75,6 +77,8 @@ build_target_rootfs_disk() {
       chmod 755 $BUILD_DIR/rootfs-script.sh
       chroot_run_script "$BUILD_DIR/rootfs-script.sh"
    fi
+
+   chroot_umount_pseudo_fs
 
    if [ ! -z "$TARGET_ROOTFS_POST_CHROOT_SCRIPT" ]; then
       echo "Run : TARGET_ROOTFS_POST_CHROOT_SCRIPT"
@@ -116,9 +120,9 @@ echo "Building $ROOTFS_BASE_DISK"
 chmod 666 $ROOTFS_BASE_DISK
 
 echo "Building $ROOTFS_BASE_TAR"
-[ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
-[ ! -f $ROOTFS_BASE_TAR ] && echo "$ROOTFS_BASE_TAR : file not found" && exit 1
-chmod 666 $ROOTFS_BASE_TAR
+#[ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
+#[ ! -f $ROOTFS_BASE_TAR ] && echo "$ROOTFS_BASE_TAR : file not found" && exit 1
+#chmod 666 $ROOTFS_BASE_TAR
 
 if [ "$1" == "--build-target" ]; then
    echo "delete $ROOTFS_TARGET_DISK"

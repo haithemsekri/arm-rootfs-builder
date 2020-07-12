@@ -9,12 +9,15 @@ export BASE_ROOTFS_PRE_CHROOT_SCRIPT=$(cat << EOF
 rm -rf  \$1/root/*
 cp $SCRIPTS_DIR/files/bashrc  \$1/root/.bashrc.orig
 cp $SCRIPTS_DIR/files/profile  \$1/root/.profile.orig
+cp $SCRIPTS_DIR/files/timesyncd.conf  \$1/etc/systemd/timesyncd.conf
 EOF
 )
 
 export BASE_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 cd /
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 2001:4860:4860::8888" >> /etc/resolv.conf
@@ -61,12 +64,15 @@ apt-get -y upgrade
 apt-get -y install --no-install-recommends util-linux nano openssh-server systemd \
 	udev systemd-sysv net-tools iproute2 iputils-ping ethtool isc-dhcp-client libyajl-dev \
    libfdt-dev libaio-dev libpixman-1-dev libglib2.0-dev libgcc-7-dev libstdc++-7-dev libncurses-dev \
-   libglib2.0-dev uuid-dev symlinks gcc g++ libsystemd-dev
+   libglib2.0-dev uuid-dev symlinks gcc g++ libsystemd-dev ntp ntpdate
 
 /14-cross-build-env.sh
 
 find / -type l -name "*.so" | xargs dirname | xargs symlinks -c
 find / \( -name "ld-linux*.so*" -o  -name "libstdc++.so" -o  -name "libpthread.so" -o  -name "libc.so" -o  -name "libcrypt.so" \) | xargs dirname | xargs symlinks -c
+
+ln -s /usr/lib/systemd/system/ntpd.service /etc/systemd/system/multi-user.target.wants/ntpd.service
+ln -s /usr/lib/systemd/system/ntpdate.service /etc/systemd/system/multi-user.target.wants/ntpdate.service
 
 cp /etc/ssh/sshd_config /etc/ssh/sshd_config.orig
 cat /etc/ssh/sshd_config | \
@@ -82,6 +88,7 @@ echo "PermitEmptyPasswords no" >> /etc/ssh/sshd_config
 cp /root/.bashrc.orig /root/.bashrc
 cp /root/.profile.orig /root/.profile
 rm -rf /lib/firmware/*
+rm -rf /boot/*
 apt-get -y clean
 df -h .
 EOF
@@ -90,6 +97,8 @@ EOF
 export TARGET_ROOTFS_CHROOT_SCRIPT=$(cat << EOF
 #!/bin/bash
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games"
+export SHELL="/bin/bash"
+export TERM="xterm-256color"
 source /etc/default/locale
 apt-get -y remove cpp cpp-7 g++ g++-7 gcc gcc-7 libcc1-0 libisl19 libmpc3 libmpfr6 libsystemd-dev symlinks
 apt-get -y autoremove
