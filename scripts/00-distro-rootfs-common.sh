@@ -120,9 +120,9 @@ echo "Building $ROOTFS_BASE_DISK"
 chmod 666 $ROOTFS_BASE_DISK
 
 echo "Building $ROOTFS_BASE_TAR"
-#[ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
-#[ ! -f $ROOTFS_BASE_TAR ] && echo "$ROOTFS_BASE_TAR : file not found" && exit 1
-#chmod 666 $ROOTFS_BASE_TAR
+[ ! -f $ROOTFS_BASE_TAR ] && backup_base_rootfs_disk
+[ ! -f $ROOTFS_BASE_TAR ] && echo "$ROOTFS_BASE_TAR : file not found" && exit 1
+chmod 666 $ROOTFS_BASE_TAR
 
 if [ "$1" == "--build-target" ]; then
    echo "delete $ROOTFS_TARGET_DISK"

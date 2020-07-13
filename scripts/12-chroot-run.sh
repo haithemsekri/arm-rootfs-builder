@@ -42,6 +42,7 @@ cleanup_on_exit () {
    echo "cleanup_on_exit"
    chroot_umount_pseudo_fs
    if_mounted_umount ${RTFS_MNT_DIR}
+   rm -rf ${RTFS_MNT_DIR}
 }
 
 chroot_run_script () {
