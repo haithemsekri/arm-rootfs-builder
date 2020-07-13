@@ -20,7 +20,7 @@ umount $TMP_DIR 2>/dev/null
 mount -o loop $DEST_DISK_FILE $TMP_DIR
 MTAB_ENTRY="$(mount | egrep "$DEST_DISK_FILE" | egrep "$TMP_DIR")"
 [ -z "$MTAB_ENTRY" ] &&  echo "Failed to mount disk" && rm -rf $TMP_DIR  && exit 1
-tar -xzf $SRC_TAR_FILE -C $TMP_DIR
+tar -xf $SRC_TAR_FILE -C $TMP_DIR
 sync
 umount $TMP_DIR
 e2fsck -f -y $DEST_DISK_FILE
